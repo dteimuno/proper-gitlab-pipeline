@@ -10,6 +10,7 @@ variables:
 stages:
   - build
   - deploy
+  - test
 
 test_docker:
   stage: .pre
