@@ -1,0 +1,53 @@
+variables:
+  NETLIFY_SITE_ID: '107c9c00-2367-4d9c-80bb-3c0cda594056'
+  VITE_APP_VERSION: $CI_COMMIT_SHORT_SHA
+
+stages:
+  - build
+  - deploy
+
+build_docker_netlify:
+  stage: .pre
+  image: docker:28
+  services:
+    - docker:28-dind
+  script:
+    - docker version
+    - echo $CI_REGISTRY_PASSWORD | docker login -u CI_REGISTRY_USER --password-stdin  $CI_REGISTRY
+    - docker build -f ci/Dockerfile -t  $CI_REGISTRY_NAME/netlify .
+    - docker push $CI_REGISTRY_NAME/netlify
+    - docker image ls
+
+#new changes
+build_website:
+  image: node:22-alpine
+  stage: build
+  script:
+    - node --version
+    - npm --version
+    - npm ci
+    - npm run build
+  artifacts:
+    paths:
+      - build/
+    
+
+
+netlify_prod:
+  image: node:22-alpine
+  stage: deploy
+  when: manual #set a manual approval stage
+  rules: #workflow rules do not apply to individual jobs
+    - if: '$CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
+  environment: 
+    name: production
+    url: 'https://dteimuno-learn-gitlab.netlify.app/'
+
+  before_script:
+    - npm install -g netlify-cli
+    - apk add curl
+  script:
+    - echo "Deploying to Site ID ${NETLIFY_SITE_ID}" 
+    - netlify deploy --dir=build --prod --site="$NETLIFY_SITE_ID" --auth="$NETLIFY_AUTH_TOKEN"
+    - curl $CI_ENVIRONMENT_URL | grep 'GitLab'
+
