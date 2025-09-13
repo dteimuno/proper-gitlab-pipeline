@@ -13,9 +13,9 @@ build_docker_netlify:
     - docker:28-dind
   script:
     - docker version
-    - echo $CI_REGISTRY_PASSWORD | docker login -u CI_REGISTRY_USER --password-stdin  $CI_REGISTRY
-    - docker build -f ci/Dockerfile -t  $CI_REGISTRY_NAME/netlify .
-    - docker push $CI_REGISTRY_NAME/netlify
+    - echo "${MY_TOKEN}" | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin  #you have to create a personal access token and store it in a variable in this case MY_TOKEN. it must have read and write registry permissions
+    - docker build -f ci/Dockerfile -t $CI_REGISTRY_IMAGE/netlify .
+    - docker push $CI_REGISTRY_IMAGE/netlify
     - docker image ls
 
 #new changes
