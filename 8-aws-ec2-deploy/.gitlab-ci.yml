@@ -1,0 +1,49 @@
+stages:
+  - build
+  - package
+  - deploy
+
+variables:
+  VITE_APP_VERSION: $CI_COMMIT_SHORT_SHA
+
+build_website:
+  image: node:22-alpine
+  stage: build
+  script:
+    - node --version
+    - npm --version
+    - npm ci
+    - npm run build
+  artifacts:
+    paths: 
+      - build/
+
+build_docker_image:
+  image: 
+    name: amazon/aws-cli:2.23.0
+    entrypoint: [""]
+  stage: package
+  services:
+    - docker:27-dind
+  variables: 
+    DOCKER_HOST: tcp://docker:2375/
+  before_script:
+    - amazon-linux-extras install docker
+  script:
+    - aws --version
+    - docker version
+    - docker build -t $DOCKER_REGISTRY/learngitlabapp:$VITE_APP_VERSION -t $DOCKER_REGISTRY/learngitlabapp .
+    - aws ecr get-login-password | docker login --username AWS --password-stdin $DOCKER_REGISTRY
+    - docker push --all-tags $DOCKER_REGISTRY/learngitlabapp
+
+
+ecs_deploy:
+  stage: deploy
+  image: 
+    name: amazon/aws-cli:2.23.0
+    entrypoint: [""]
+  script:
+    - aws --version
+    - aws ecs register-task-definition --cli-input-json file://aws/td-prod.json
+    - aws ecs update-service --cluster LearnGitLabApp-Cluster-Prod --service LearnJenkinsApp-Service-Prod --task-definition LearnGitLabApp-TD-Prod
+    - aws ecs wait services-stable --cluster LearnGitLabApp-Cluster-Prod --services LearnJenkinsApp-Service-Prod
