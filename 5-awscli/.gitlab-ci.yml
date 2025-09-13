@@ -1,0 +1,22 @@
+variables:
+  VITE_APP_VERSION: $CI_COMMIT_SHORT_SHA
+
+build_website:
+  image: node:22-alpine
+  stage: build
+  script:
+    - node --version
+    - npm --version
+    - npm ci
+    - npm run build
+  artifacts:
+    paths: 
+      - build/
+
+aws_s3: #aws cli required an entrypoint override
+ stage: .pre
+ image: 
+  name: amazon/aws-cli:2.23.0
+  entrypoint: [""]
+ script:
+   - aws --version
