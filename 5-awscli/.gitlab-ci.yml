@@ -1,3 +1,4 @@
+#Ensure you set the AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY variables are stored in gitlab. masked and hide the secret access key
 variables:
   VITE_APP_VERSION: $CI_COMMIT_SHORT_SHA
 
@@ -20,3 +21,4 @@ aws_s3: #aws cli required an entrypoint override
   entrypoint: [""]
  script:
    - aws --version
+   - aws s3 ls
